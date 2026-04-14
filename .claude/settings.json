@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(npm run build)",
+      "Bash(npm run dev)",
+      "Bash(npm run lint)",
+      "Bash(npm run test)",
+      "Bash(npx wrangler deploy)",
+      "Bash(npx wrangler dev:*)",
+      "Bash(npx wrangler tail:*)",
+      "Bash(npx wrangler d1 execute:*)",
+      "Bash(npx wrangler pages deploy:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(gh pr:*)",
+      "Bash(gh issue:*)",
+      "Bash(curl:*)",
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(npx wrangler d1 execute:* DROP*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/*.local.*)"
+    ]
+  },
+  "env": {
+    "ALLYCLAW_PROJECT": "intelligence"
+  }
+}

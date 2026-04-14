@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Cloudflare wrangler
+.wrangler/
+**/.wrangler/
+.dev.vars
+
+# Build output
+dist/
+**/dist/
+.vite/
+
+# Local / personal overrides
+CLAUDE.local.md
+.claude/settings.local.json
+**/*.local
+**/*.local.*
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Editor
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Plan scratch
+.claude/plans/

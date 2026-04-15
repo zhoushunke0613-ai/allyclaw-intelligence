@@ -6,7 +6,7 @@
 
 ## 项目状态
 
-📝 **Phase 0**：规划完成，骨架就绪，Phase 1 可启动
+🚧 **Phase 1 收口**，Phase 2 待启动。详见下方 [里程碑表](#里程碑)。
 
 ## 文档
 
@@ -104,16 +104,80 @@ cd worker && npm run dev
 cd frontend && npm run dev
 ```
 
-## Phase 规划
+## 里程碑
 
-参考 [PRD §15](./docs/PRD.md#15-里程碑规划)：
+参考 [PRD §15](./docs/PRD.md#15-里程碑规划) 拆解。状态图例：✅ 完成 · 🚧 进行中 · ⏸ 待启动 · ⏳ 阻塞中。
 
-| Phase | 周次 | 目标 |
-|-------|-----|------|
-| Phase 1 | W1-W6 | 可观测性建设 — 先看见 |
-| Phase 2 | W7-W12 | 诊断与建议 — 先找到问题 |
-| Phase 3 | W13-W18 | 低风险自主优化 — 先自动优化一部分 |
-| Phase 4 | W19-W24 | 持续学习与策略迭代 — 形成闭环 |
+### Phase 1：可观测性建设（W1-W6）— 🚧 收口阶段
+
+| 周次 | 交付 | 状态 | 备注 |
+|------|------|------|------|
+| W1 | 项目初始化 + 数据模型评审 | ✅ | PRD/DATA-MODEL/DECISIONS 三份文档锁定 |
+| W1 | GitHub 仓库 + .claude/ 控制中心 | ✅ | 5 rules + 5 commands + 3 skills + 3 agents |
+| W1 | Cloudflare Worker 骨架部署 | ✅ | https://allyclaw-intelligence.zhoushunke0613.workers.dev |
+| W1 | Migration 001：基础表 (4 张) | ✅ | int_teams / server_team_map / sessions_enriched / daily_metrics |
+| W2 | LLM Adapter 抽象 | ✅ | Claude 实现 + OpenAI 占位 |
+| W3 | `/api/teams` 自动发现 | ✅ | 12 servers → 9 teams |
+| W3 | Enrichment job (规则版) | ✅ | 19 sessions enriched |
+| W4 | `/api/analytics/daily-metrics` 物化 | ✅ | 9 daily rows |
+| W4 | `/api/analytics/overview` | ✅ | success_rate 84.21% |
+| W5 | Migration 002：分类 + 报告表 | ✅ | 10 L1 categories + 10 keyword rules seeded |
+| W5 | 规则分类引擎 | ✅ | 12/19 sessions classified |
+| W5 | success_label 6-rule cascade (PRD §16.8.2) | ✅ | refuse/failure/partial/success/unknown |
+| W6 | 日报 Markdown 生成器 | ✅ | R-2026-04-15-daily-global |
+| W6 | Migration 003：dedup BUG 修复 | ✅ | NULL → '_overall' sentinel |
+| W6 | Cron triggers (15min/h/day) | ✅ | 自动跑 enrichment + 分类 + 报告 |
+| W6 | LLM Haiku 兜底分类 (graceful) | ⏳ | 代码就绪，等 ANTHROPIC_API_KEY |
+
+### Phase 2：诊断与建议（W7-W12）— ⏸ 待启动
+
+| 周次 | 交付 | 状态 | 依赖 |
+|------|------|------|------|
+| W7-8 | 调用链模式挖掘（Golden Path / Anti-pattern） | ⏸ | execution_events 表 |
+| W9 | 上下文缺口识别（few-shot 缺失等） | ⏸ | LLM 启用 |
+| W10 | 优化建议池 + 工作台 UI | ⏸ | optimization_suggestions 表 |
+| W11 | 团队画像分析 | ⏸ | sessions_enriched 数据积累 |
+| W12 | 对比面板 + 第一次完整周报评审 | ⏸ | reports 投递通道 |
+
+**Exit Criteria**：每周产出 ≥ 10 条建议、人工评审可用率 ≥ 60%
+
+### Phase 3：低风险自主优化（W13-W18）— ⏸ 待启动
+
+| 周次 | 交付 | 状态 |
+|------|------|------|
+| W13-14 | 自主优化引擎 + 审批流 | ⏸ |
+| W15 | 灰度发布 + 回滚机制 | ⏸ |
+| W16 | 路由规则自主优化 | ⏸ |
+| W17 | 缓存策略自主优化 | ⏸ |
+| W18 | 自主优化效果评估 | ⏸ |
+
+**Exit Criteria**：≥ 3 个自主优化动作上线并有正向收益
+
+### Phase 4：持续学习与策略迭代（W19-W24）— ⏸ 待启动
+
+| 周次 | 交付 | 状态 |
+|------|------|------|
+| W19-20 | A/B 测试框架 | ⏸ |
+| W21 | skill / prompt 版本实验 | ⏸ |
+| W22 | 长期知识库 (FAQ / 黄金路径 / 已知问题) | ⏸ |
+| W23 | Agent Ops 方法论文档 | ⏸ |
+| W24 | Phase 4 整体评审 | ⏸ |
+
+**Exit Criteria**：优化后回答成功率提升 ≥ 15%（PRD §16.1 M6 目标）
+
+---
+
+### 待人工事项（跨 Phase 累计）
+
+| # | 事项 | 优先级 | 阻塞 |
+|---|------|------|------|
+| 1 | `wrangler secret put ANTHROPIC_API_KEY` | 🔴 高 | LLM 兜底分类、Phase 2 诊断 |
+| 2 | 关键词规则扩充（9 个 0 命中分类） | 🟠 中 | 分类覆盖率提升 |
+| 3 | 拉 20 条对照判定 success_label 准确率 | 🟠 中 | PRD §16.8.4 校准 |
+| 4 | scheduled 日志持久化到 audit_log | 🟡 低 | 排错时再做 |
+| 5 | 真实"追问检测"（跨 session） | 🟡 低 | Phase 2 |
+| 6 | 报告投递通道（飞书/Slack webhook） | 🟡 低 | Phase 2 |
+| 7 | L2 二级分类 | 🟡 低 | Phase 2 |
 
 ## 与 allyclaw-context-dashboard 的关系
 

@@ -7,9 +7,11 @@
 
 import type { Env } from '../env'
 import { detectHighFailureCategory } from './detectors/high-failure-category'
+import { detectCategoryCoverageGap } from './detectors/category-coverage-gap'
 
 const DETECTORS = [
   { id: 'D-001-high-failure-category', run: detectHighFailureCategory },
+  { id: 'D-002-category-coverage-gap', run: detectCategoryCoverageGap },
 ]
 
 export interface DetectorRunSummary {

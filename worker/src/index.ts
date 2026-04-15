@@ -12,11 +12,14 @@ import analyticsRoutes from './routes/analytics'
 import classificationsRoutes from './routes/classifications'
 import reportsRoutes from './routes/reports'
 import suggestionsRoutes from './routes/suggestions'
+import teamsProfileRoutes from './routes/teams-profile'
 import { enrichSessions } from './jobs/enrich-sessions'
 import { classifySessions } from './jobs/classify-sessions'
 import { computeDailyMetrics } from './jobs/compute-daily-metrics'
 import { generateDailyReport } from './jobs/generate-daily-report'
 import { discoverSuggestions } from './jobs/discover-suggestions'
+import { computeTeamSnapshots } from './jobs/compute-team-snapshots'
+import { trackSuggestionOutcomes } from './jobs/track-suggestion-outcomes'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -37,6 +40,7 @@ app.route('/', analyticsRoutes)
 app.route('/', classificationsRoutes)
 app.route('/', reportsRoutes)
 app.route('/', suggestionsRoutes)
+app.route('/', teamsProfileRoutes)
 
 /**
  * Scheduled job dispatcher.
@@ -74,8 +78,14 @@ export default {
       })())
     } else if (cron === '13 1 * * *') {
       ctx.waitUntil((async () => {
-        const result = await generateDailyReport(env)
-        console.log('[scheduled] daily-report', result)
+        const report = await generateDailyReport(env)
+        const outcomes = await trackSuggestionOutcomes(env)
+        console.log('[scheduled] daily-batch', { report, outcomes })
+      })())
+    } else if (cron === '47 3 * * 1') {
+      ctx.waitUntil((async () => {
+        const result = await computeTeamSnapshots(env)
+        console.log('[scheduled] team-snapshots', result)
       })())
     } else {
       console.warn(`[scheduled] unknown cron: ${cron}`)

@@ -6,6 +6,9 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { Env } from './env'
+import teamsRoutes from './routes/teams'
+import sessionsEnrichedRoutes from './routes/sessions-enriched'
+import analyticsRoutes from './routes/analytics'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -20,10 +23,8 @@ app.get('/api/health', (c) => c.json({
   version: '0.1.0',
 }))
 
-// Phase 1 routes will be added here:
-// app.route('/', teamsRoutes)
-// app.route('/', sessionsEnrichedRoutes)
-// app.route('/', dailyMetricsRoutes)
-// app.route('/', skillsRoutes)
+app.route('/', teamsRoutes)
+app.route('/', sessionsEnrichedRoutes)
+app.route('/', analyticsRoutes)
 
 export default app

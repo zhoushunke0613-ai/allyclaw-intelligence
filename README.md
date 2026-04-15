@@ -6,7 +6,11 @@
 
 ## 项目状态
 
-🚧 Phase 2 进行中：**W10 + W11 已落地**（建议生成基础设施 + 团队画像 + 效果追踪）。详见下方 [里程碑表](#里程碑)。
+🚀 **Phase 2 W12 已落地** — 前端工作台 MVP 上线。详见下方 [里程碑表](#里程碑)。
+
+**生产 URL**：
+- 工作台：https://allyclaw-intelligence-dashboard.pages.dev
+- API：https://allyclaw-intelligence.zhoushunke0613.workers.dev
 
 ## 文档
 
@@ -146,7 +150,10 @@ cd frontend && npm run dev
 | W11 | 第二个检测器 D-002：分类覆盖缺口 | ✅ | 行动性轨道 |
 | W11 | Suggestion outcome tracker（30d 前后对比） | ✅ | 闭环 |
 | W11 | Cron `:weekly` 跑团队快照 | ✅ | 周一 03:47 UTC |
-| W12 | 对比面板 + 第一次完整周报评审 | ⏸ | reports 投递通道 |
+| W12 | React 工作台 MVP（7 页面 + 状态机 UI） | ✅ | https://allyclaw-intelligence-dashboard.pages.dev |
+| W12 | Markdown 报告查看器（自渲染） | ✅ | 覆盖 h1/h2/table/code/list |
+| W12 | 团队对比 + 健康度可视化 | ✅ | health bar 渐变 |
+| W12 | 报告投递通道（飞书/Slack） | ⏸ | 后置到 Phase 3 |
 
 **Exit Criteria**：每周产出 ≥ 10 条建议、人工评审可用率 ≥ 60%
 

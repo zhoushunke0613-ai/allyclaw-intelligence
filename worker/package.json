@@ -12,8 +12,9 @@
     "db:init:remote": "wrangler d1 execute allyclaw-db --remote --file=../migrations/001_phase1_base.sql"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
     "hono": "^4.0.0",
-    "@anthropic-ai/sdk": "^0.30.0"
+    "openai": "^4.104.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240405.0",

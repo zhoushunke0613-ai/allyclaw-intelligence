@@ -8,7 +8,7 @@
  */
 
 import type { Env } from '../env'
-import { getLLM } from '../llm/factory'
+import { getLLM, hasLLMCredentials } from '../llm/factory'
 import { LLMError } from '../llm/types'
 import { CLASSIFY_SYSTEM, classifyUserPrompt, CLASSIFY_PROMPT_VERSION } from '../prompts/classify'
 
@@ -32,7 +32,7 @@ interface Category {
 }
 
 const METHOD_RULE = 'rule'
-const METHOD_LLM = 'llm_haiku'
+const METHOD_LLM = 'llm'
 const VERSION = 'v1.0-keyword'
 
 export async function classifySessions(env: Env, opts: { limit?: number; useLLMFallback?: boolean } = {}): Promise<{
@@ -45,7 +45,7 @@ export async function classifySessions(env: Env, opts: { limit?: number; useLLMF
 }> {
   const db = env.DB
   const limit = opts.limit ?? 1000
-  const useLLMFallback = opts.useLLMFallback ?? Boolean(env.ANTHROPIC_API_KEY)
+  const useLLMFallback = opts.useLLMFallback ?? hasLLMCredentials(env)
 
   const [rules, categories] = await Promise.all([
     loadActiveRules(env),

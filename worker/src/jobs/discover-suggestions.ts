@@ -8,10 +8,14 @@
 import type { Env } from '../env'
 import { detectHighFailureCategory } from './detectors/high-failure-category'
 import { detectCategoryCoverageGap } from './detectors/category-coverage-gap'
+import { detectContextGap } from './detectors/context-gap'
+import { detectCrossSessionRepeat } from './detectors/cross-session-repeat'
 
 const DETECTORS = [
   { id: 'D-001-high-failure-category', run: detectHighFailureCategory },
   { id: 'D-002-category-coverage-gap', run: detectCategoryCoverageGap },
+  { id: 'D-003-context-gap', run: detectContextGap },
+  { id: 'D-004-cross-session-repeat', run: detectCrossSessionRepeat },
 ]
 
 export interface DetectorRunSummary {

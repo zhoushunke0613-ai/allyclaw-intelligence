@@ -40,8 +40,10 @@ interface ScoreComponents {
   success: number
   activity: number
   classification_coverage: number
-  responsiveness: number  // placeholder; needs real duration data
+  responsiveness: number
 }
+
+const TIER_CHANGE_THRESHOLD = 5  // health_score points
 
 export interface SnapshotResult {
   teams_processed: number
@@ -62,10 +64,13 @@ export async function computeTeamSnapshots(env: Env, opts: { weekStart?: string 
 
     const topCats = await loadTopCategories(env, t.team_id, start, end)
     const topQs = await loadTopQuestions(env, t.team_id, start, end)
+    const p50Duration = await loadP50Duration(env, t.team_id, start, end)
+    const prevHealth = await loadPreviousHealthScore(env, t.team_id, start)
     const successRate = stats.session_count ? stats.success_count / stats.session_count : 0
     const usageDepth = stats.session_count ? stats.total_messages / stats.session_count : 0
-    const components = scoreComponents(stats, successRate)
+    const components = scoreComponents(stats, successRate, p50Duration)
     const health = compositeHealth(components)
+    const tierChange = computeTierChange(health, prevHealth)
 
     await env.DB.prepare(
       `INSERT INTO int_team_snapshots
@@ -87,6 +92,7 @@ export async function computeTeamSnapshots(env: Env, opts: { weekStart?: string 
          top_questions_json = excluded.top_questions_json,
          health_score = excluded.health_score,
          health_breakdown_json = excluded.health_breakdown_json,
+         tier_change = excluded.tier_change,
          computed_at = datetime('now')`,
     ).bind(
       t.team_id, start, end,
@@ -94,7 +100,7 @@ export async function computeTeamSnapshots(env: Env, opts: { weekStart?: string 
       stats.active_servers, usageDepth,
       JSON.stringify(topCats), JSON.stringify(topQs),
       health, JSON.stringify(components),
-      'stable', new Date().toISOString(),
+      tierChange, new Date().toISOString(),
     ).run()
 
     written++
@@ -177,23 +183,71 @@ async function loadTopQuestions(env: Env, team_id: string, start: string, end: s
 }
 
 /**
+ * Median of total_duration_ms across the team's enriched sessions in this window.
+ * D1 has no native PERCENTILE, so we load sorted values and pick the middle.
+ * Typical weekly volume per team is well under a few hundred rows.
+ */
+async function loadP50Duration(env: Env, team_id: string, start: string, end: string): Promise<number | null> {
+  const rows = await env.DB.prepare(
+    `SELECT total_duration_ms
+     FROM int_sessions_enriched
+     WHERE team_id = ? AND enriched_at >= ? AND enriched_at < ?
+       AND total_duration_ms IS NOT NULL AND total_duration_ms > 0
+     ORDER BY total_duration_ms`,
+  ).bind(team_id, start, end).all<{ total_duration_ms: number }>()
+
+  const durations = rows.results.map(r => r.total_duration_ms)
+  if (durations.length === 0) return null
+  const mid = Math.floor(durations.length / 2)
+  return durations.length % 2 === 0
+    ? (durations[mid - 1] + durations[mid]) / 2
+    : durations[mid]
+}
+
+async function loadPreviousHealthScore(env: Env, team_id: string, currentStart: string): Promise<number | null> {
+  const prev = await env.DB.prepare(
+    `SELECT health_score
+     FROM int_team_snapshots
+     WHERE team_id = ? AND period_type = 'week' AND period_start < ?
+     ORDER BY period_start DESC LIMIT 1`,
+  ).bind(team_id, currentStart).first<{ health_score: number | null }>()
+  return prev?.health_score ?? null
+}
+
+/**
+ * tier_change semantics match the schema enum: upgrade / downgrade / stable / new.
+ * 5-point threshold on a 0-100 health_score — tight enough to surface real
+ * movement, loose enough to ignore weekly noise from tiny session counts.
+ */
+function computeTierChange(current: number, previous: number | null): string {
+  if (previous === null) return 'new'
+  const delta = current - previous
+  if (delta >= TIER_CHANGE_THRESHOLD) return 'upgrade'
+  if (delta <= -TIER_CHANGE_THRESHOLD) return 'downgrade'
+  return 'stable'
+}
+
+/**
  * Health score components, each 0-1.
  *
  * - success: success_rate, capped at 0.95 = 1.0 (perfect rate is unrealistic)
  * - activity: log-scaled session count (sessions ≥ 50 = 1.0)
  * - classification_coverage: classified_count / session_count (proxy for "we understand what they ask")
- * - responsiveness: placeholder 0.7 until real duration data is collected
+ * - responsiveness: from P50 session duration — linear decay 0s→1.0 through 300s→0.2,
+ *     clamped at 0.2 floor. Null P50 (no duration data) keeps 0.7 neutral fallback.
  */
-function scoreComponents(stats: BasicStats, successRate: number): ScoreComponents {
+function scoreComponents(stats: BasicStats, successRate: number, p50DurationMs: number | null): ScoreComponents {
   const success = Math.min(successRate / 0.95, 1.0)
   const activity = stats.session_count >= 50 ? 1.0 : Math.log10(stats.session_count + 1) / Math.log10(51)
   const classCov = stats.session_count > 0 ? stats.classified_count / stats.session_count : 0
-  const responsiveness = 0.7  // TODO: replace with real duration P50 score
+  const responsiveness = p50DurationMs === null
+    ? 0.7
+    : Math.max(0.2, 1 - p50DurationMs / 300000)
   return {
     success: round2(success),
     activity: round2(activity),
     classification_coverage: round2(classCov),
-    responsiveness,
+    responsiveness: round2(responsiveness),
   }
 }
 

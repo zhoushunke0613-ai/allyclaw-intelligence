@@ -39,7 +39,7 @@
 |----|------|
 | 后端 | Cloudflare Worker + Hono |
 | 数据库 | Cloudflare D1（共享 `allyclaw-db`） |
-| LLM | Claude（通过 Adapter，未来可切换） |
+| LLM | OpenAI-兼容接口（通过 Adapter，可指向 ChatGPT Plus OAuth 代理 / 直连 API / 其他兼容后端） |
 | 前端 | React + Vite + TypeScript |
 | 部署 | Cloudflare Workers + Pages |
 
@@ -84,8 +84,13 @@ cd ../frontend && npm install
 cd worker
 npx wrangler login
 
-# Anthropic API key
-npx wrangler secret put ANTHROPIC_API_KEY
+# LLM 凭据（二选一）：
+#   A. 直连 OpenAI 官方 API
+npx wrangler secret put OPENAI_API_KEY
+#   B. 走本机代理（ChatGPT Plus / Codex OAuth，zhou 的本机方案）
+#      - 本机跑 allyclaw-codex-proxy + cloudflared tunnel（两个 LaunchAgent 自动维护）
+#      - cloudflared-wrapper.sh 会自动把最新 trycloudflare URL 推到下面这个 secret
+npx wrangler secret put OPENAI_BASE_URL   # 形如 https://xxx.trycloudflare.com/v1
 ```
 
 ### 3. 初始化 schema
@@ -131,14 +136,14 @@ cd frontend && npm run dev
 | W6 | 日报 Markdown 生成器 | ✅ | R-2026-04-15-daily-global |
 | W6 | Migration 003：dedup BUG 修复 | ✅ | NULL → '_overall' sentinel |
 | W6 | Cron triggers (15min/h/day) | ✅ | 自动跑 enrichment + 分类 + 报告 |
-| W6 | LLM Haiku 兜底分类 (graceful) | ⏳ | 代码就绪，等 ANTHROPIC_API_KEY |
+| W6 | LLM 兜底分类 (graceful) | ✅ | 走 OpenAI Adapter，生产指向 ChatGPT Plus OAuth 代理 |
 
 ### Phase 2：诊断与建议（W7-W12）— 🚧 进行中
 
 | 周次 | 交付 | 状态 | 依赖 |
 |------|------|------|------|
-| W7-8 | 调用链模式挖掘（Golden Path / Anti-pattern） | ⏸ | execution_events 表 |
-| W9 | 上下文缺口识别（few-shot 缺失等） | ⏸ | LLM 启用 |
+| W7-8 | 调用链模式挖掘（Golden Path / Anti-pattern） | ⏸ | 需 `int_execution_events` 表；D-004 cross-session-repeat 先用行为聚类代理 |
+| W9 | 上下文缺口识别（D-003 context_gap） | ✅ | analyzer 模型 LLM 诊断，5 种 gap_type，带证据链 |
 | W10 | Migration 004：suggestion lifecycle 4 张表 | ✅ | dedup_key 防重复 |
 | W10 | 第一个检测器：高失败率分类（D-001） | ✅ | 当前数据量未触发，等积累 |
 | W10 | Suggestions API（list / detail / status / comments） | ✅ | 含状态机校验 |
@@ -183,17 +188,38 @@ cd frontend && npm run dev
 
 ---
 
+### 2026-04-15 Phase 1/2 代码收口 ✅
+
+5 项可立即代码收口的事项已全部落地：
+
+| # | 事项 | 方式 |
+|---|------|------|
+| 1 | 关键词规则扩充（10 条英文重点规则，覆盖 9 个零命中 L1） | migration 006 |
+| 2 | scheduled 日志持久化 `int_audit_log`（ok/error + duration） | migration 006 + `runCron` helper |
+| 3 | L2 二级分类 starter（30 个 L2 坑位，每 L1 下 3 个） | migration 007 |
+| 4 | `tier_change` 周 delta 逻辑（upgrade/downgrade/stable/new，阈值 5 分） | `compute-team-snapshots.ts` |
+| 5 | `responsiveness` 用 P50 duration 替换占位 0.7（300s 线性衰减，0.2 地板） | `compute-team-snapshots.ts` |
+
+### 2026-04-15 LLM 接入 + D-003 / D-004 上线 ✅
+
+| # | 事项 | 说明 |
+|---|------|------|
+| 1 | ChatGPT Plus OAuth 代理链路打通 | `allyclaw-codex-proxy/server.js` (OpenAI Chat Completions → ChatGPT Codex Responses API) + cloudflared quick tunnel |
+| 2 | `OPENAI_BASE_URL` secret 自动同步 | `cloudflared-wrapper.sh` 捕获新 trycloudflare URL 并推送到 Worker secret |
+| 3 | LaunchAgent 自恢复基础设施 | `com.allyclaw.codex-proxy` + `com.allyclaw.cloudflared` 双 plist，KeepAlive=true，崩溃自动重启并重新同步 URL |
+| 4 | D-003 context-gap 检测器落地 | `analyzer` 模型诊断 team×category 失败簇，5 种 gap_type 白名单，confidence≥0.55 才落建议，带 LLM 快照 + sample 证据 |
+| 5 | D-004 cross-session-repeat 检测器落地 | 规则式 `(server×category)` 反复失败行为代理（≥3 会话 / ≥2 非 success / 7d 窗口），作为"跨 session 追问"的可用代理信号（`execution_events` 未就绪前） |
+| 6 | 加入 `discover-suggestions` 编排 | 4 个检测器并行跑（D-001/D-002 规则 + D-003 LLM + D-004 行为计数），LLM 无凭据时 D-003 graceful degrade |
+
 ### 待人工事项（跨 Phase 累计）
 
 | # | 事项 | 优先级 | 阻塞 |
 |---|------|------|------|
-| 1 | `wrangler secret put ANTHROPIC_API_KEY` | 🔴 高 | LLM 兜底分类、Phase 2 诊断 |
-| 2 | 关键词规则扩充（9 个 0 命中分类） | 🟠 中 | 分类覆盖率提升 |
-| 3 | 拉 20 条对照判定 success_label 准确率 | 🟠 中 | PRD §16.8.4 校准 |
-| 4 | scheduled 日志持久化到 audit_log | 🟡 低 | 排错时再做 |
-| 5 | 真实"追问检测"（跨 session） | 🟡 低 | Phase 2 |
-| 6 | 报告投递通道（飞书/Slack webhook） | 🟡 低 | Phase 2 |
-| 7 | L2 二级分类 | 🟡 低 | Phase 2 |
+| 1 | 拉 20 条对照判定 success_label 准确率 | 🟠 中 | PRD §16.8.4 校准 |
+| 2 | 2 周后复核 detector 阈值（D-001 30% / D-002 25% / D-003 conf 0.55 / D-004 ≥3 会话） | 🟡 低 | 需真实数据 |
+| 3 | 真正"跨 session 追问"归因（需 `sessions.user_id` 或 `int_execution_events`） | 🟡 低 | 依赖 context-dashboard agent 升级（DATA-MODEL §12.3）；D-004 已提供行为代理 |
+| 4 | 报告投递通道（飞书/Slack webhook） | 🟡 低 | Phase 3 |
+| 5 | L2 分类规则 + 分类器 | 🟡 低 | Phase 3（starter 已就位） |
 
 ## 与 allyclaw-context-dashboard 的关系
 

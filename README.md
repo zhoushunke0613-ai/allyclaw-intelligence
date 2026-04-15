@@ -6,7 +6,7 @@
 
 ## 项目状态
 
-🚧 **Phase 1 收口**，Phase 2 待启动。详见下方 [里程碑表](#里程碑)。
+🚧 **Phase 1 收口**，**Phase 2 W10 已落地**（建议生成基础设施）。详见下方 [里程碑表](#里程碑)。
 
 ## 文档
 
@@ -129,13 +129,17 @@ cd frontend && npm run dev
 | W6 | Cron triggers (15min/h/day) | ✅ | 自动跑 enrichment + 分类 + 报告 |
 | W6 | LLM Haiku 兜底分类 (graceful) | ⏳ | 代码就绪，等 ANTHROPIC_API_KEY |
 
-### Phase 2：诊断与建议（W7-W12）— ⏸ 待启动
+### Phase 2：诊断与建议（W7-W12）— 🚧 进行中
 
 | 周次 | 交付 | 状态 | 依赖 |
 |------|------|------|------|
 | W7-8 | 调用链模式挖掘（Golden Path / Anti-pattern） | ⏸ | execution_events 表 |
 | W9 | 上下文缺口识别（few-shot 缺失等） | ⏸ | LLM 启用 |
-| W10 | 优化建议池 + 工作台 UI | ⏸ | optimization_suggestions 表 |
+| W10 | Migration 004：suggestion lifecycle 4 张表 | ✅ | dedup_key 防重复 |
+| W10 | 第一个检测器：高失败率分类（D-001） | ✅ | 当前数据量未触发，等积累 |
+| W10 | Suggestions API（list / detail / status / comments） | ✅ | 含状态机校验 |
+| W10 | 日报新增 Open Suggestions 章节 | ✅ | 自动列待审建议 |
+| W10 | Cron `:23 hourly` 跑 detector | ✅ | 错峰于 metrics |
 | W11 | 团队画像分析 | ⏸ | sessions_enriched 数据积累 |
 | W12 | 对比面板 + 第一次完整周报评审 | ⏸ | reports 投递通道 |
 

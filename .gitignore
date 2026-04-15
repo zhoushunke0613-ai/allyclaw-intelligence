@@ -34,3 +34,4 @@ npm-debug.log*
 
 # Plan scratch
 .claude/plans/
+frontend/tsconfig.tsbuildinfo

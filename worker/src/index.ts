@@ -11,10 +11,12 @@ import sessionsEnrichedRoutes from './routes/sessions-enriched'
 import analyticsRoutes from './routes/analytics'
 import classificationsRoutes from './routes/classifications'
 import reportsRoutes from './routes/reports'
+import suggestionsRoutes from './routes/suggestions'
 import { enrichSessions } from './jobs/enrich-sessions'
 import { classifySessions } from './jobs/classify-sessions'
 import { computeDailyMetrics } from './jobs/compute-daily-metrics'
 import { generateDailyReport } from './jobs/generate-daily-report'
+import { discoverSuggestions } from './jobs/discover-suggestions'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -34,6 +36,7 @@ app.route('/', sessionsEnrichedRoutes)
 app.route('/', analyticsRoutes)
 app.route('/', classificationsRoutes)
 app.route('/', reportsRoutes)
+app.route('/', suggestionsRoutes)
 
 /**
  * Scheduled job dispatcher.
@@ -63,6 +66,11 @@ export default {
       ctx.waitUntil((async () => {
         const result = await computeDailyMetrics(env, { days: 30 })
         console.log('[scheduled] daily-metrics', result)
+      })())
+    } else if (cron === '23 * * * *') {
+      ctx.waitUntil((async () => {
+        const result = await discoverSuggestions(env)
+        console.log('[scheduled] discover-suggestions', result)
       })())
     } else if (cron === '13 1 * * *') {
       ctx.waitUntil((async () => {

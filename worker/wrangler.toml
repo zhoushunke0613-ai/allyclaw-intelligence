@@ -13,5 +13,6 @@ database_id = "ac0fb9c3-58cd-4319-8547-c4375ce4cbce"
 crons = [
   "*/15 * * * *",  # enrichment + classification (~实时)
   "7 * * * *",     # 每小时 7 分 - 重算 daily_metrics
+  "23 * * * *",    # 每小时 23 分 - 跑 detector 发现新建议（晚于 metrics）
   "13 1 * * *",    # 每日 01:13 UTC - 生成日报（错峰）
 ]

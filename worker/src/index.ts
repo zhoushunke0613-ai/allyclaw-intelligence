@@ -24,7 +24,12 @@ import { trackSuggestionOutcomes } from './jobs/track-suggestion-outcomes'
 const app = new Hono<{ Bindings: Env }>()
 
 app.use('/api/*', cors({
-  origin: ['http://localhost:5173', 'https://allyclaw-intelligence-dashboard.pages.dev'],
+  origin: (origin) => {
+    if (!origin) return origin
+    if (origin.startsWith('http://localhost:')) return origin
+    if (origin.endsWith('.pages.dev')) return origin
+    return null
+  },
   credentials: true,
 }))
 

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "intelligence-frontend",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/zhou0613/code/allyclaw-intelligence/frontend && npm run dev"],
+      "port": 5176
+    }
+  ]
+}

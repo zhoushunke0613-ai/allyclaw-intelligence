@@ -111,7 +111,7 @@ Respond with JSON:
       let retryable = false
       if (status === 429) { kind = 'rate_limit'; retryable = true }
       else if (status === 401 || status === 403) { kind = 'auth'; retryable = false }
-      else if (status >= 500) { kind = 'timeout'; retryable = true }
+      else if (status !== undefined && status >= 500) { kind = 'timeout'; retryable = true }
       return new LLMError(err.message, kind, 'claude', retryable)
     }
     return new LLMError(String(err), 'unknown', 'claude', false)

@@ -6,7 +6,7 @@
 
 ## 项目状态
 
-🚧 **Phase 1 收口**，**Phase 2 W10 已落地**（建议生成基础设施）。详见下方 [里程碑表](#里程碑)。
+🚧 Phase 2 进行中：**W10 + W11 已落地**（建议生成基础设施 + 团队画像 + 效果追踪）。详见下方 [里程碑表](#里程碑)。
 
 ## 文档
 
@@ -140,7 +140,12 @@ cd frontend && npm run dev
 | W10 | Suggestions API（list / detail / status / comments） | ✅ | 含状态机校验 |
 | W10 | 日报新增 Open Suggestions 章节 | ✅ | 自动列待审建议 |
 | W10 | Cron `:23 hourly` 跑 detector | ✅ | 错峰于 metrics |
-| W11 | 团队画像分析 | ⏸ | sessions_enriched 数据积累 |
+| W11 | Migration 005：team_snapshots + outcome 字段 | ✅ | weekly 粒度 |
+| W11 | 团队画像 + 健康度评分（4 维度加权） | ✅ | 9 团队 ranked |
+| W11 | `/api/teams/:id/profile` + `/api/teams/comparison` | ✅ | 描述性轨道 |
+| W11 | 第二个检测器 D-002：分类覆盖缺口 | ✅ | 行动性轨道 |
+| W11 | Suggestion outcome tracker（30d 前后对比） | ✅ | 闭环 |
+| W11 | Cron `:weekly` 跑团队快照 | ✅ | 周一 03:47 UTC |
 | W12 | 对比面板 + 第一次完整周报评审 | ⏸ | reports 投递通道 |
 
 **Exit Criteria**：每周产出 ≥ 10 条建议、人工评审可用率 ≥ 60%

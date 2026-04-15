@@ -9,6 +9,8 @@ import type { Env } from './env'
 import teamsRoutes from './routes/teams'
 import sessionsEnrichedRoutes from './routes/sessions-enriched'
 import analyticsRoutes from './routes/analytics'
+import classificationsRoutes from './routes/classifications'
+import reportsRoutes from './routes/reports'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -26,5 +28,7 @@ app.get('/api/health', (c) => c.json({
 app.route('/', teamsRoutes)
 app.route('/', sessionsEnrichedRoutes)
 app.route('/', analyticsRoutes)
+app.route('/', classificationsRoutes)
+app.route('/', reportsRoutes)
 
 export default app

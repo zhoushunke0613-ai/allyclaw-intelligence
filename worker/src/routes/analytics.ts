@@ -14,10 +14,14 @@ const app = new Hono<{ Bindings: Env }>()
 
 app.get('/api/analytics/daily-metrics', async (c) => {
   const team_id = c.req.query('team_id')
+  const category = c.req.query('category') ?? '_overall'
   const days = Math.min(90, Number(c.req.query('days') ?? 30))
 
-  const conditions: string[] = [`metric_date >= date('now', '-${days} days')`]
-  const params: unknown[] = []
+  const conditions: string[] = [
+    `metric_date >= date('now', '-${days} days')`,
+    'category_id = ?',
+  ]
+  const params: unknown[] = [category]
   if (team_id) {
     conditions.push('team_id = ?')
     params.push(team_id)

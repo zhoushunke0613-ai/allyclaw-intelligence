@@ -11,6 +11,10 @@ import sessionsEnrichedRoutes from './routes/sessions-enriched'
 import analyticsRoutes from './routes/analytics'
 import classificationsRoutes from './routes/classifications'
 import reportsRoutes from './routes/reports'
+import { enrichSessions } from './jobs/enrich-sessions'
+import { classifySessions } from './jobs/classify-sessions'
+import { computeDailyMetrics } from './jobs/compute-daily-metrics'
+import { generateDailyReport } from './jobs/generate-daily-report'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -31,4 +35,42 @@ app.route('/', analyticsRoutes)
 app.route('/', classificationsRoutes)
 app.route('/', reportsRoutes)
 
-export default app
+/**
+ * Scheduled job dispatcher.
+ * Cron schedules are defined in wrangler.toml triggers.
+ *
+ *   "every 15 min"  → enrichment + classification (incremental)
+ *   "hourly :07"    → daily metrics rollup
+ *   "01:13 UTC"     → daily report
+ *
+ * Cloudflare passes the matching cron expression in event.cron, so we route
+ * by exact match rather than time math.
+ */
+export default {
+  fetch: app.fetch,
+
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    const cron = event.cron
+    console.log(`[scheduled] cron="${cron}" started at ${new Date(event.scheduledTime).toISOString()}`)
+
+    if (cron === '*/15 * * * *') {
+      ctx.waitUntil((async () => {
+        const enrich = await enrichSessions(env, { limit: 500 })
+        const classify = await classifySessions(env, { limit: 500 })
+        console.log('[scheduled] enrich+classify', { enrich, classify })
+      })())
+    } else if (cron === '7 * * * *') {
+      ctx.waitUntil((async () => {
+        const result = await computeDailyMetrics(env, { days: 30 })
+        console.log('[scheduled] daily-metrics', result)
+      })())
+    } else if (cron === '13 1 * * *') {
+      ctx.waitUntil((async () => {
+        const result = await generateDailyReport(env)
+        console.log('[scheduled] daily-report', result)
+      })())
+    } else {
+      console.warn(`[scheduled] unknown cron: ${cron}`)
+    }
+  },
+}

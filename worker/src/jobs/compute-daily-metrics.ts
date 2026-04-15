@@ -48,7 +48,7 @@ export async function computeDailyMetrics(env: Env, opts: { days?: number } = {}
         (metric_date, team_id, category_id,
          session_count, success_count, failure_count, refuse_count,
          total_skill_calls, total_api_calls)
-       VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)
+       VALUES (?, ?, '_overall', ?, ?, ?, ?, ?, ?)
        ON CONFLICT(metric_date, team_id, category_id) DO UPDATE SET
          session_count = excluded.session_count,
          success_count = excluded.success_count,

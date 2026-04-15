@@ -79,7 +79,7 @@ async function aggregateDay(env: Env, date: string): Promise<DailyAgg> {
         COALESCE(SUM(refuse_count), 0) AS refuse,
         COUNT(DISTINCT team_id) AS active_teams
      FROM int_daily_metrics
-     WHERE metric_date = ?`,
+     WHERE metric_date = ? AND category_id = '_overall'`,
   ).bind(date).first<{
     total_sessions: number
     success: number
@@ -123,7 +123,7 @@ async function teamRankingForDate(env: Env, date: string): Promise<TeamRow[]> {
   const rows = await env.DB.prepare(
     `SELECT team_id, session_count, success_count
      FROM int_daily_metrics
-     WHERE metric_date = ?
+     WHERE metric_date = ? AND category_id = '_overall'
      ORDER BY session_count DESC LIMIT 5`,
   ).bind(date).all<TeamRow>()
   return rows.results

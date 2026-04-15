@@ -8,10 +8,10 @@ binding = "DB"
 database_name = "allyclaw-db"
 database_id = "ac0fb9c3-58cd-4319-8547-c4375ce4cbce"
 
-# 定时任务（Phase 1 起逐步启用）
-# [triggers]
-# crons = [
-#   "0 1 * * *",    # 每日 01:00 UTC - 日报生成
-#   "0 2 * * 1",    # 周一 02:00 UTC - 周报生成
-#   "*/30 * * * *", # 每半小时 - 分类任务
-# ]
+# 定时任务（Phase 1）
+[triggers]
+crons = [
+  "*/15 * * * *",  # enrichment + classification (~实时)
+  "7 * * * *",     # 每小时 7 分 - 重算 daily_metrics
+  "13 1 * * *",    # 每日 01:13 UTC - 生成日报（错峰）
+]

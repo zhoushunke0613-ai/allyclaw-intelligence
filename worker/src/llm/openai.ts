@@ -27,7 +27,11 @@ export class OpenAIProvider implements LLMProvider {
   private client: OpenAI
 
   constructor(apiKey: string, baseURL?: string) {
-    this.client = new OpenAI({ apiKey, baseURL })
+    // 15s per-call timeout: Worker scheduled handlers hard-cap at 30s,
+    // so a single hung LLM call cannot eat the whole budget and starve
+    // the post-job audit INSERT. maxRetries cut to 1 so a 15s hang
+    // can't compound into 45s via default 2-retry behavior.
+    this.client = new OpenAI({ apiKey, baseURL, timeout: 15_000, maxRetries: 1 })
   }
 
   async complete(opts: CompleteOptions): Promise<CompleteResponse> {
@@ -105,6 +109,9 @@ Respond with JSON:
   }
 
   private wrapError(err: unknown): LLMError {
+    if (err instanceof OpenAI.APIConnectionTimeoutError) {
+      return new LLMError(err.message, 'timeout', 'openai', true)
+    }
     if (err instanceof OpenAI.APIError) {
       const status = err.status
       let kind: LLMError['kind'] = 'unknown'

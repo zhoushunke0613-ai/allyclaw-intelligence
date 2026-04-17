@@ -52,10 +52,23 @@ app.get('/api/analytics/overview', async (c) => {
      FROM int_sessions_enriched`,
   ).first<{ rate: number | null }>()
 
+  const breakdownRows = await db.prepare(
+    `SELECT success_label AS label, COUNT(*) AS n
+     FROM int_sessions_enriched
+     GROUP BY success_label`,
+  ).all<{ label: string | null; n: number }>()
+
+  const breakdown = { success: 0, failure: 0, partial: 0, refuse: 0, unknown: 0 }
+  for (const r of breakdownRows.results) {
+    const key = r.label && r.label in breakdown ? (r.label as keyof typeof breakdown) : 'unknown'
+    breakdown[key] += r.n
+  }
+
   return c.json({
     enriched_sessions: sessions?.c ?? 0,
     teams: teams?.c ?? 0,
     success_rate_pct: successRate?.rate ?? null,
+    success_label_breakdown: breakdown,
   })
 })
 

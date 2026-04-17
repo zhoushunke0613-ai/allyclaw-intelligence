@@ -34,6 +34,13 @@ export interface OverviewStats {
   enriched_sessions: number
   teams: number
   success_rate_pct: number | null
+  success_label_breakdown?: {
+    success: number
+    failure: number
+    partial: number
+    refuse: number
+    unknown: number
+  }
 }
 
 export interface TeamSnapshot {

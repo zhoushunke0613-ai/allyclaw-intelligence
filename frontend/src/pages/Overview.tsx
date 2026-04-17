@@ -32,6 +32,13 @@ export default function OverviewPage() {
         <Metric label="Open Suggestions" value={suggestions?.length ?? 0} />
       </div>
 
+      {stats?.success_label_breakdown && stats.enriched_sessions > 0 && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div className="card-title">Session Outcome Breakdown</div>
+          <OutcomeBreakdown breakdown={stats.success_label_breakdown} total={stats.enriched_sessions} />
+        </div>
+      )}
+
       <div className="two-col">
         <div className="card">
           <div className="card-title">Team Health Ranking</div>
@@ -92,6 +99,59 @@ function Metric({ label, value }: { label: string; value: number | string }) {
       <div className="metric-label">{label}</div>
       <div className="metric-value">{value}</div>
     </div>
+  )
+}
+
+type OutcomeKey = 'success' | 'partial' | 'refuse' | 'failure' | 'unknown'
+
+const OUTCOME_ORDER: { key: OutcomeKey; label: string }[] = [
+  { key: 'success', label: 'Success' },
+  { key: 'partial', label: 'Partial' },
+  { key: 'refuse',  label: 'Refuse' },
+  { key: 'failure', label: 'Failure' },
+  { key: 'unknown', label: 'Unknown' },
+]
+
+function OutcomeBreakdown({
+  breakdown,
+  total,
+}: {
+  breakdown: Record<OutcomeKey, number>
+  total: number
+}): JSX.Element {
+  return (
+    <>
+      <div className="outcome-bar" role="img" aria-label="Session outcome breakdown">
+        {OUTCOME_ORDER.map(({ key }) => {
+          const n = breakdown[key] ?? 0
+          if (n === 0) return null
+          const pct = (n / total) * 100
+          return (
+            <div
+              key={key}
+              className={`outcome-bar-seg outcome-seg-${key}`}
+              style={{ width: `${pct}%` }}
+              title={`${key}: ${n} (${pct.toFixed(1)}%)`}
+            />
+          )
+        })}
+      </div>
+      <div className="outcome-legend">
+        {OUTCOME_ORDER.map(({ key, label }) => {
+          const n = breakdown[key] ?? 0
+          if (n === 0) return null
+          const pct = (n / total) * 100
+          return (
+            <span key={key} className="outcome-legend-item">
+              <span className={`outcome-legend-dot outcome-seg-${key}`} />
+              <span>{label}</span>
+              <span className="outcome-legend-count">{n}</span>
+              <span className="outcome-legend-pct">{pct.toFixed(1)}%</span>
+            </span>
+          )
+        })}
+      </div>
+    </>
   )
 }
 

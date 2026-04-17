@@ -358,3 +358,32 @@ button {
 /* loading + error */
 .loading { padding: 40px; text-align: center; color: var(--text-tertiary); font-size: 12px; }
 .error { padding: 16px; background: rgba(176, 64, 80, 0.08); color: var(--rose); border-radius: var(--radius-sm); font-size: 12px; }
+
+/* success-label outcome breakdown bar */
+.outcome-bar {
+  display: flex;
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--surface-raised);
+}
+.outcome-bar-seg { height: 100%; transition: width 0.2s; }
+.outcome-seg-success { background: var(--green); }
+.outcome-seg-partial { background: var(--accent); }
+.outcome-seg-refuse  { background: var(--purple); }
+.outcome-seg-failure { background: var(--rose); }
+.outcome-seg-unknown { background: var(--text-tertiary); }
+
+.outcome-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.outcome-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.outcome-legend-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.outcome-legend-count { font-variant-numeric: tabular-nums; color: var(--text-primary); font-weight: 500; }
+.outcome-legend-pct { color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
